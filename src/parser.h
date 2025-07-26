@@ -3,6 +3,8 @@
 
 #include "lexer.h"
 
-int to_rpn(const Token *tokens, int token_count, Token *output, int max_output);
+// Переводит инфикс в ОПЗ (RPN)
+// Возвращает количество выходных токенов или -1 при ошибке
+int to_rpn(const Token *in, int n, Token *out, int cap);
 
 #endif
