@@ -1,92 +1,97 @@
 #include "lexer.h"
-#include <ctype.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int tokenize(const char *expression, Token *tokens, int max_tokens) {
-    int i = 0; // позиция в строке
-    int count = 0;
+static int is_digit(char c) { return c >= '0' && c <= '9'; }
 
-    while (expression[i] != '\0') {
-        if (isspace(expression[i])) {
+static int is_letter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+
+static int is_space(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+
+static int is_func(const char *s) {
+    return strcmp(s, "sin") == 0 || strcmp(s, "cos") == 0 || strcmp(s, "tan") == 0 || strcmp(s, "ctg") == 0 ||
+           strcmp(s, "sqrt") == 0 || strcmp(s, "ln") == 0;
+}
+
+int tokenize(const char *expr, Token *out, int cap) {
+    int i = 0;      // индекс в expr
+    int count = 0;  // сколько токенов уже записано
+
+    while (expr[i] != '\0') {
+        char c = expr[i];
+
+        if (is_space(c)) {
             i++;
             continue;
         }
 
-        if (count >= max_tokens) return -1;
+        if (count >= cap) return -1;
 
-        // Число
-        if (isdigit(expression[i]) || (expression[i] == '.' && isdigit(expression[i + 1]))) {
-            char *end;
-            tokens[count].value = strtod(&expression[i], &end);
-            tokens[count].type = T_NUMBER;
-            int len = end - &expression[i];
-            strncpy(tokens[count].str, &expression[i], len);
-            tokens[count].str[len] = '\0';
-            i += len;
+        // Число: 3.14 или .5
+        if (is_digit(c) || (c == '.' && is_digit(expr[i + 1]))) {
+            char buf[32] = {0};
+            int j = 0;
+
+            while ((is_digit(expr[i]) || expr[i] == '.') && j < 31) {
+                buf[j++] = expr[i++];
+            }
+            buf[j] = '\0';
+
+            out[count].type = T_NUMBER;
+            out[count].value = strtod(buf, NULL);
+            strncpy(out[count].str, buf, sizeof(out[count].str));
             count++;
             continue;
         }
 
-        // Буквы — может быть x или функция
-        if (isalpha(expression[i])) {
-            char ident[16] = {0};
+        // Идентификатор: функция или переменная
+        if (is_letter(c)) {
+            char buf[16] = {0};
             int j = 0;
 
-            while (isalpha(expression[i]) && j < 15) {
-                ident[j++] = expression[i++];
+            while (is_letter(expr[i]) && j < 15) {
+                buf[j++] = expr[i++];
             }
-            ident[j] = '\0';
+            buf[j] = '\0';
 
-            if (strcmp(ident, "x") == 0) {
-                tokens[count].type = T_VARIABLE;
-            } else if (
-                strcmp(ident, "sin") == 0 || strcmp(ident, "cos") == 0 ||
-                strcmp(ident, "tan") == 0 || strcmp(ident, "ctg") == 0 ||
-                strcmp(ident, "sqrt") == 0 || strcmp(ident, "ln") == 0
-            ) {
-                tokens[count].type = T_FUNCTION;
+            if (strcmp(buf, "x") == 0) {
+                out[count].type = T_VARIABLE;
+            } else if (is_func(buf)) {
+                out[count].type = T_FUNCTION;
             } else {
-                return -1;  // неизвестная функция/переменная
+                return -1;
             }
 
-            strcpy(tokens[count].str, ident);
+            strncpy(out[count].str, buf, sizeof(out[count].str));
             count++;
             continue;
         }
 
         // Скобки
-        if (expression[i] == '(') {
-            tokens[count].type = T_LPAREN;
-            strcpy(tokens[count].str, "(");
-            count++;
-            i++;
-            continue;
-        }
-
-        if (expression[i] == ')') {
-            tokens[count].type = T_RPAREN;
-            strcpy(tokens[count].str, ")");
+        if (c == '(' || c == ')') {
+            out[count].type = (c == '(') ? T_LPAREN : T_RPAREN;
+            out[count].str[0] = c;
+            out[count].str[1] = '\0';
             count++;
             i++;
             continue;
         }
 
         // Операторы
-        if (strchr("+-*/", expression[i])) {
-            tokens[count].type = T_OPERATOR;
-            tokens[count].str[0] = expression[i];
-            tokens[count].str[1] = '\0';
+        if (c == '+' || c == '-' || c == '*' || c == '/') {
+            out[count].type = T_OPERATOR;
+            out[count].str[0] = c;
+            out[count].str[1] = '\0';
             count++;
             i++;
             continue;
         }
 
-        // Неизвестный символ
+        // Ошибка: неизвестный символ
         return -1;
     }
 
     return count;
 }
-
