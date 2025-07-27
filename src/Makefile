@@ -1,14 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -std=c11
 SRC = graph.c lexer.c parser.c evaluator.c
-OBJ = $(SRC:.c=.o)
-BIN = ../build/graph
+BUILDDIR = ../build
 
-all: $(BIN)
+all: graph
 
-$(BIN): $(SRC)
-	mkdir -p ../build
-	$(CC) $(CFLAGS) -o $(BIN) $(SRC) -lm
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) $(SRC) -o $(BUILDDIR)/graph
 
 clean:
 	rm -f *.o
