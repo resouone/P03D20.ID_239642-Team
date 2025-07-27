@@ -9,6 +9,7 @@ static int precedence(const char *op) {
 }
 
 static int is_left_associative(const char *op) {
+    (void)op;
     return 1;  // все операторы у нас левоассоциативные
 }
 

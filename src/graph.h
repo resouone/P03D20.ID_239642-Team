@@ -5,6 +5,6 @@
 
 #include "lexer.h"  // для определения Token
 
-void draw_graph(const Token *rpn, size_t len);
+void draw_graph(const Token *rpn, int len);
 
 #endif

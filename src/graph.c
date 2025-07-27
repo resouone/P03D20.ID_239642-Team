@@ -41,7 +41,7 @@ static void draw_canvas(const char canvas[HEIGHT][WIDTH]) {
     }
 }
 
-static void draw_graph(const Token *rpn, int rpn_len) {
+void draw_graph(const Token *rpn, int rpn_len) {
     char canvas[HEIGHT][WIDTH];
     clear_canvas(canvas);
 
