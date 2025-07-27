@@ -1,5 +1,3 @@
-#include "parser.h"
-
 #include <string.h>
 
 #include "lexer.h"
