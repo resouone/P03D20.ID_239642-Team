@@ -1,18 +1,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-typedef enum
-{
-    T_NUMBER,
-    T_OPERATOR,
-    T_LPAREN,
-    T_RPAREN,
-    T_VARIABLE,
-    T_FUNCTION
-} TokenType;
+typedef enum { T_NUMBER, T_OPERATOR, T_LPAREN, T_RPAREN, T_VARIABLE, T_FUNCTION } TokenType;
 
-typedef struct
-{
+typedef struct {
     TokenType type;
     char str[16];
     double value;
