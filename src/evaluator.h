@@ -3,6 +3,8 @@
 
 #include "lexer.h"
 
-double evaluate_rpn(const Token *rpn, int rpn_length, double x_value);
+// Вычисляет выражение в ОПЗ (RPN) при заданном x
+// Возвращает результат или NAN при ошибке
+double evaluate_rpn(const Token *rpn, int len, double x);
 
 #endif
