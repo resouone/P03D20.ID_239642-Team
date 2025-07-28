@@ -20,19 +20,24 @@ int tokenize(const char *expr, Token *out, int cap) {
     int count = 0;  // сколько токенов уже записано
 
     while (expr[i] != '\0') {
-        char c = expr[i];
-
-        if (is_space(c)) {
+        if (is_space(expr[i])) {
             i++;
             continue;
         }
 
         if (count >= cap) return -1;
 
-        // Число: 3.14 или .5
-        if (is_digit(c) || (c == '.' && is_digit(expr[i + 1]))) {
+        // Число: 3.14 или .5 или -0.5
+        if (is_digit(expr[i]) || (expr[i] == '.' && is_digit(expr[i + 1])) ||
+            (expr[i] == '-' &&
+             (i == 0 || out[count - 1].type == T_OPERATOR || out[count - 1].type == T_LPAREN) &&
+             (is_digit(expr[i + 1]) || expr[i + 1] == '.'))) {
             char buf[32] = {0};
             int j = 0;
+
+            if (expr[i] == '-') {
+                buf[j++] = expr[i++];
+            }
 
             while ((is_digit(expr[i]) || expr[i] == '.') && j < 31) {
                 buf[j++] = expr[i++];
@@ -46,8 +51,46 @@ int tokenize(const char *expr, Token *out, int cap) {
             continue;
         }
 
-        // Идентификатор: функция или переменная
-        if (is_letter(c)) {
+        // Унарный минус перед переменной или функцией → заменяем на "0 - x"
+        if (expr[i] == '-' &&
+            (i == 0 || out[count - 1].type == T_OPERATOR || out[count - 1].type == T_LPAREN) &&
+            is_letter(expr[i + 1])) {
+            // Добавим "0"
+            out[count].type = T_NUMBER;
+            out[count].value = 0.0;
+            strcpy(out[count].str, "0");
+            count++;
+
+            // Добавим "-"
+            out[count].type = T_OPERATOR;
+            strcpy(out[count].str, "-");
+            count++;
+
+            i++;  // пропускаем '-'
+
+            // Теперь ожидаем переменную или функцию
+            char buf[16] = {0};
+            int j = 0;
+            while (is_letter(expr[i]) && j < 15) {
+                buf[j++] = expr[i++];
+            }
+            buf[j] = '\0';
+
+            if (strcmp(buf, "x") == 0) {
+                out[count].type = T_VARIABLE;
+            } else if (is_func(buf)) {
+                out[count].type = T_FUNCTION;
+            } else {
+                return -1;
+            }
+
+            strncpy(out[count].str, buf, sizeof(out[count].str));
+            count++;
+            continue;
+        }
+
+        // Переменная или функция
+        if (is_letter(expr[i])) {
             char buf[16] = {0};
             int j = 0;
 
@@ -70,26 +113,26 @@ int tokenize(const char *expr, Token *out, int cap) {
         }
 
         // Скобки
-        if (c == '(' || c == ')') {
-            out[count].type = (c == '(') ? T_LPAREN : T_RPAREN;
-            out[count].str[0] = c;
+        if (expr[i] == '(' || expr[i] == ')') {
+            out[count].type = (expr[i] == '(') ? T_LPAREN : T_RPAREN;
+            out[count].str[0] = expr[i];
             out[count].str[1] = '\0';
             count++;
             i++;
             continue;
         }
 
-        // Операторы
-        if (c == '+' || c == '-' || c == '*' || c == '/') {
+        // Операторы + - * /
+        if (expr[i] == '+' || expr[i] == '-' || expr[i] == '*' || expr[i] == '/') {
             out[count].type = T_OPERATOR;
-            out[count].str[0] = c;
+            out[count].str[0] = expr[i];
             out[count].str[1] = '\0';
             count++;
             i++;
             continue;
         }
 
-        // Ошибка: неизвестный символ
+        // Неизвестный символ
         return -1;
     }
 

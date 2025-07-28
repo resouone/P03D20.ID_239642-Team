@@ -5,9 +5,11 @@ BUILDDIR = ../build
 
 all: graph
 
+graph:
 	mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) $(SRC) -o $(BUILDDIR)/graph
+	$(CC) $(CFLAGS) $(SRC) -lm -o $(BUILDDIR)/graph
 
 clean:
 	rm -f *.o
-	rm -f ../build/graph
+	rm -f $(BUILDDIR)/graph
+	rm -r $(BUILDDIR)

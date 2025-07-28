@@ -26,13 +26,16 @@ static void clear_canvas(char canvas[HEIGHT][WIDTH]) {
 static void plot_point(char canvas[HEIGHT][WIDTH], int col, double y) {
     if (y < Y_MIN || y > Y_MAX || isnan(y)) return;
 
-    int row = round((Y_MAX - y) / (Y_MAX - Y_MIN) * (HEIGHT - 1));
+    // Ось Y идёт вниз, значит при Y_MIN -> row 0 (верх), при Y_MAX -> row HEIGHT-1 (низ)
+    int row = round((y - Y_MIN) / (Y_MAX - Y_MIN) * (HEIGHT - 1));
+
     if (row >= 0 && row < HEIGHT && col >= 0 && col < WIDTH) {
         canvas[row][col] = '*';
     }
 }
 
 static void draw_canvas(const char canvas[HEIGHT][WIDTH]) {
+    // Верх экрана — первая строка (0), низ — последняя (HEIGHT - 1)
     for (int y = 0; y < HEIGHT; ++y) {
         for (int x = 0; x < WIDTH; ++x) {
             putchar(canvas[y][x]);
@@ -48,6 +51,7 @@ void draw_graph(const Token *rpn, int rpn_len) {
     for (int col = 0; col < WIDTH; ++col) {
         double x = X_MIN + (X_MAX - X_MIN) * col / (WIDTH - 1);
         double y = evaluate_rpn(rpn, rpn_len, x);
+        printf("x = %.6f, y = %.6f\n", x, y);
         plot_point(canvas, col, y);
     }
 
@@ -75,6 +79,12 @@ int main(void) {
         printf("n/a\n");
         return 1;
     }
+
+    printf("RPN: ");
+    for (int i = 0; i < nrpn; ++i) {
+        printf("%s ", rpn[i].str);
+    }
+    printf("\n");
 
     draw_graph(rpn, nrpn);
     return 0;

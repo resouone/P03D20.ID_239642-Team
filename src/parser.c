@@ -8,15 +8,10 @@ static int precedence(const char *op) {
     return 0;
 }
 
-static int is_left_associative(const char *op) {
-    (void)op;
-    return 1;  // все операторы у нас левоассоциативные
-}
-
 int to_rpn(const Token *in, int n, Token *out, int cap) {
     Token stack[256];
-    int sp = 0;   // стек операндов
-    int pos = 0;  // позиция в out
+    int sp = 0;   // стек операторов
+    int pos = 0;  // позиция в выходном массиве
 
     for (int i = 0; i < n; ++i) {
         Token tok = in[i];
@@ -28,11 +23,9 @@ int to_rpn(const Token *in, int n, Token *out, int cap) {
             if (sp >= 256) return -1;
             stack[sp++] = tok;
         } else if (tok.type == T_OPERATOR) {
-            while (sp > 0 && ((stack[sp - 1].type == T_FUNCTION) ||
+            while (sp > 0 && (stack[sp - 1].type == T_FUNCTION ||
                               (stack[sp - 1].type == T_OPERATOR &&
-                               ((precedence(stack[sp - 1].str) > precedence(tok.str)) ||
-                                (precedence(stack[sp - 1].str) == precedence(tok.str) &&
-                                 is_left_associative(tok.str)))))) {
+                               precedence(stack[sp - 1].str) >= precedence(tok.str)))) {
                 if (pos >= cap) return -1;
                 out[pos++] = stack[--sp];
             }
@@ -50,23 +43,21 @@ int to_rpn(const Token *in, int n, Token *out, int cap) {
                 if (pos >= cap) return -1;
                 out[pos++] = stack[--sp];
             }
-            if (!matched) return -1;  // несбалансированные скобки
-
-            // если после скобки была функция — тоже выгрузим
+            if (!matched) return -1;
             if (sp > 0 && stack[sp - 1].type == T_FUNCTION) {
                 if (pos >= cap) return -1;
                 out[pos++] = stack[--sp];
             }
         } else {
-            return -1;  // неизвестный токен
+            return -1;
         }
     }
 
-    // сброс стека
     while (sp > 0) {
-        if (stack[sp - 1].type == T_LPAREN || stack[sp - 1].type == T_RPAREN) return -1;
+        Token tok = stack[--sp];  // сначала извлекаем токен
+        if (tok.type == T_LPAREN || tok.type == T_RPAREN) return -1;
         if (pos >= cap) return -1;
-        out[pos++] = stack[--sp];
+        out[pos++] = tok;
     }
 
     return pos;
